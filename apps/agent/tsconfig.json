@@ -10,5 +10,6 @@
     { "path": "../../packages/config-schema" },
     { "path": "../../packages/tools" }
   ],
-  "include": [".flue/agents/**/*.ts", "src/**/*.ts", "flue.config.ts"]
+  "include": [".flue/**/*.ts"],
+  "exclude": ["dist"]
 }

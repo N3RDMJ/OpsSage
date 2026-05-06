@@ -11,11 +11,9 @@ for the v1 build plan.
 
 ```
 apps/agent/.flue/agents/diagnose-5xx-spike.ts   The flue agent (default export)
+apps/agent/.flue/lib/                           Helpers the agent imports
+                                                (dedupe, logger, slack adapter)
 apps/agent/.agents/skills/diagnose-5xx-spike.md Skill markdown (auto-discovered)
-apps/agent/flue.config.ts                       flue project config
-apps/agent/src/                                 Helpers the agent imports
-                                                (dedupe, logger, slack adapter,
-                                                 tracer wiring)
 packages/tools                                  Datadog / GitHub / Slack /
                                                 Langfuse SDK wrappers
 packages/config-schema                          zod schemas (env, payloads,
@@ -31,7 +29,7 @@ from a separate HTTP server:
 
 ```ts
 // apps/agent/.flue/agents/diagnose-5xx-spike.ts
-import type { FlueContext } from '@flue/sdk/client';
+import type { FlueContext } from '@flue/sdk';
 import { defineCommand } from '@flue/sdk/node';
 import * as v from 'valibot';
 
@@ -57,8 +55,9 @@ export default async function ({ init, payload }: FlueContext) {
 }
 ```
 
-- `flue dev` runs the agent locally; `flue build --target node` produces the
-  Node server we ship to ECS.
+- `flue dev` runs the agent locally; `flue build --target node` produces
+  `dist/server.mjs`, the Node server we ship to ECS. The runtime exposes
+  `GET /health`, `GET /agents` (manifest), and `POST /agents/<name>/<id>`.
 - Skill markdown lives at `.agents/skills/`; flue auto-discovers it.
 - Tools are CLIs registered with `defineCommand()` and baked into the agent's
   Docker image.

@@ -50,7 +50,7 @@ jobs:
           OPSSAGE_ALERT_CHANNEL: ${{ vars.OPSSAGE_ALERT_CHANNEL }}
         run: pnpm exec cdk deploy --all --require-approval never
 
-      - name: Smoke /healthz
+      - name: Smoke /health
         env:
           ALB_URL: ${{ vars.OPSSAGE_ALB_URL }}
         run: |
@@ -58,4 +58,4 @@ jobs:
             echo "OPSSAGE_ALB_URL var is unset; skipping smoke."
             exit 0
           fi
-          curl --fail --max-time 10 "${ALB_URL}/healthz"
+          curl --fail --max-time 10 "${ALB_URL}/health"

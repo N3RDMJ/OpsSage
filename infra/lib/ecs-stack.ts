@@ -85,7 +85,7 @@ export class EcsStack extends cdk.Stack {
         OPSSAGE_REPOS_FILE: '/app/config/repos.yaml',
       },
       healthCheck: {
-        command: ['CMD-SHELL', 'wget -qO- http://localhost:8080/healthz || exit 1'],
+        command: ['CMD-SHELL', 'wget -qO- http://localhost:8080/health || exit 1'],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(5),
         retries: 3,
@@ -131,14 +131,14 @@ export class EcsStack extends cdk.Stack {
       httpsListener.addTargets('Agent', {
         port: 8080,
         targets: [agentService],
-        healthCheck: { path: '/healthz', healthyHttpCodes: '200' },
+        healthCheck: { path: '/health', healthyHttpCodes: '200' },
       });
     } else {
       const httpListener = alb.addListener('Http', { port: 80 });
       httpListener.addTargets('Agent', {
         port: 8080,
         targets: [agentService],
-        healthCheck: { path: '/healthz', healthyHttpCodes: '200' },
+        healthCheck: { path: '/health', healthyHttpCodes: '200' },
       });
     }
 

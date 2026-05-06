@@ -51,5 +51,6 @@ ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 USER node
-# `flue build --target node` writes the server entrypoint to dist/server.js.
-CMD ["node", "dist/server.js"]
+# `flue build --target node` produces dist/server.mjs (port defaults to 3000;
+# PORT=8080 above keeps the ALB target group on a single, predictable port).
+CMD ["node", "dist/server.mjs"]

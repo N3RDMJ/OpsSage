@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { type FlueContext } from '@flue/sdk/client';
+import { type FlueContext } from '@flue/sdk';
 import { defineCommand } from '@flue/sdk/node';
 import {
   datadogWebhookSchema,
@@ -9,9 +9,9 @@ import {
 } from '@opssage/config-schema';
 import { langfuse } from '@opssage/tools';
 import * as v from 'valibot';
-import { buildChatAdapter, renderSummary } from '../../src/chat/slack.js';
-import { TtlLru } from '../../src/dedupe.js';
-import { logger } from '../../src/log.js';
+import { buildChatAdapter, renderSummary } from '../lib/chat.js';
+import { TtlLru } from '../lib/dedupe.js';
+import { logger } from '../lib/log.js';
 
 // Trigger: Datadog calls POST /agents/diagnose-5xx-spike with the webhook
 // JSON as the body. flue's webhook trigger surfaces it as `payload`.

@@ -7,14 +7,15 @@
     "build": "flue build --target node",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "flue dev",
-    "start": "node dist/server.js",
+    "start": "node dist/server.mjs",
     "test": "vitest run"
   },
   "dependencies": {
     "@flue/sdk": "^0.1.0",
     "@opssage/config-schema": "workspace:*",
     "@opssage/tools": "workspace:*",
-    "valibot": "^0.42.1"
+    "just-bash": "^2.14.2",
+    "valibot": "^1.0.0"
   },
   "devDependencies": {
     "@flue/cli": "^0.1.0",

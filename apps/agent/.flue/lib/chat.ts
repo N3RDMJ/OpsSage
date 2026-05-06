@@ -1,7 +1,6 @@
+import type { Env, TriageSummary } from '@opssage/config-schema';
 import { slack as slackTools } from '@opssage/tools';
-import type { Env } from '@opssage/config-schema';
-import type { TriageSummary } from '@opssage/config-schema';
-import { logger } from '../log.js';
+import { logger } from './log.js';
 
 export interface ChatTarget {
   channel: string;
