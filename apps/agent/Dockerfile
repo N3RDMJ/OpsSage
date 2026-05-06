@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS base
+FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -25,7 +25,7 @@ RUN pnpm --filter @opssage/config-schema build \
 RUN pnpm --filter @opssage/agent... --prod deploy /out
 
 # --- runtime ---
-FROM node:20-bookworm-slim AS runtime
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
 # CLIs the flue commands shell out to (gh, datadog-ci, curl, git, rg, jq).
