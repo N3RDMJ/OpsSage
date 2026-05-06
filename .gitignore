@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# CDK
+cdk.out/
+cdk.context.json
+
+# coverage
+coverage/
+.nyc_output/
