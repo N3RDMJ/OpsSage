@@ -72,15 +72,29 @@ Datadog's published webhook IP ranges (refreshed daily by the
 `DatadogIpRanges` custom resource in `infra/`). Add a Lambda authorizer
 or path-embedded token if/when belt-and-suspenders is needed.
 
-## Cursor
+## Why not Cursor as the model provider
 
-The plan calls for Cursor as the production model provider. `pi-ai`
-(flue's underlying provider library) resolves keys from env vars, but
-Cursor's Anthropic-compatible endpoint requires a custom `Model` with a
-`baseUrl` override — `init({ model: 'anthropic/...' })` only resolves to
-public Anthropic. Wiring that up means constructing the `Model` at build
-time or via a custom `resolveModel`. Queued as a follow-up; v1 ships
-against public Anthropic.
+The original plan named Cursor as the LLM target. After looking at what
+Cursor actually ships, that doesn't fit:
+
+- The [Cursor APIs](https://cursor.com/docs/api) are Admin, Analytics,
+  AI Code Tracking, **Cloud Agents**, and a TypeScript SDK. There's
+  no `/v1/messages` or `/v1/chat/completions` endpoint to point flue's
+  model layer at.
+- [`@cursor/sdk`](https://cursor.com/blog/typescript-sdk) is a coding-
+  agent runtime — `Agent.create({ apiKey, model: { id: 'composer-2' },
+  local: { cwd } })` then `agent.send(prompt)`. It's structurally
+  parallel to flue, not stackable; adopting it would mean replacing
+  flue, not extending it.
+- pi-ai (flue's provider library) ships zero Cursor support, and there's
+  nothing for it to support — pi-ai is a completions-style provider
+  layer; Cursor isn't a completions-style service.
+
+So v1 ships with Anthropic via pi-ai, which is real raw inference
+(`https://api.anthropic.com/v1/messages` with `ANTHROPIC_API_KEY`). If
+Cursor's models become useful for deep code investigation, the right
+shape is "Cursor SDK as a tool the skill invokes" — alongside `gh`,
+`datadog-ci`, etc. — not as the LLM provider.
 
 ## Local dev
 
@@ -111,7 +125,7 @@ populate them out of band before the first run.
 
 - Datadog monitor webhook → flue agent → `diagnose-5xx-spike` skill →
   Slack reply
-- Anthropic-namespace model, transport-switchable to Cursor
+- Anthropic via pi-ai (any pi-ai built-in provider is a one-line swap)
 - Single Fargate task behind ALB (Datadog IP allowlist)
 - Langfuse tracing around every flue session
 

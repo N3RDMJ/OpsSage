@@ -86,9 +86,19 @@ which is the right shape for an on-call tool.
 
 ## LLM
 
-Target is **Cursor via API key**, configured through flue's
-provider-agnostic model layer. Swappable to Anthropic / OpenAI / etc.
-without code changes.
+**Anthropic** via flue's provider-agnostic model layer (pi-ai), reading
+`ANTHROPIC_API_KEY` from env. Model namespace is `anthropic/<model-id>`,
+swappable to OpenAI, Google, Bedrock, etc. without code changes — every
+pi-ai built-in provider is a one-line config swap.
+
+Cursor was the original target, but Cursor's public API is the [Cloud
+Agents API](https://cursor.com/docs/cloud-agent/api/endpoints) and
+the `@cursor/sdk` coding-agent runtime — both are agent-orchestration
+products, not raw inference. There's no `/v1/messages` to point flue's
+model layer at. If Cursor's models become useful for deep code
+investigation, the right shape is "Cursor SDK as a tool the skill
+invokes" (alongside `gh`, `datadog-ci`, etc.) — not "Cursor as the
+LLM provider".
 
 ## Open questions
 

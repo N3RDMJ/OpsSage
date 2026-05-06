@@ -11,7 +11,8 @@ allowlist of repos), and posts a **triage summary** as a reply in the
 existing Datadog→Slack alert thread (plus structured JSON to stdout).
 Deployed to **AWS ECS Fargate** behind an ALB, secrets in **AWS Secrets
 Manager**, infra in **AWS CDK (TypeScript)**, every run traced through
-**Langfuse**. Model provider is **Cursor** via flue's provider layer.
+**Langfuse**. Model provider is **Anthropic** via flue's provider layer
+(see AGENTS.md §LLM for why not Cursor).
 
 Out of scope for v1: other skills, multi-tenant config, Daytona, Teams/
 Discord output, skill registry, GitHub App.
@@ -32,7 +33,7 @@ Discord output, skill registry, GitHub App.
                                         │       │
                        Datadog API/curl │       │ ecs:RunTask / RPC
                        gh CLI + GH API  │       ▼
-                       Cursor (LLM)     │  ┌──────────────────┐
+                       Anthropic (LLM)  │  ┌──────────────────┐
                        Langfuse traces  │  │ Sandbox task     │
                                         │  │ (sibling ECS,    │
                                         │  │  shallow clones, │
@@ -58,7 +59,6 @@ opssage/
 │   │   │   ├── index.ts           # HTTP server (Hono/fastify) + flue bootstrap
 │   │   │   ├── webhook/datadog.ts # header-secret verify + payload parse
 │   │   │   ├── chat/              # chat-sdk.dev wiring + Slack adapter
-│   │   │   ├── providers/cursor.ts
 │   │   │   ├── tracing/langfuse.ts
 │   │   │   ├── sandbox/client.ts  # talks to the sandbox task
 │   │   │   └── config.ts
@@ -94,9 +94,9 @@ opssage/
 ### 2. flue session
 
 - One session per alert. Roles + tools wired up at startup.
-- Provider: Cursor via `@flue/provider-cursor` (or whatever flue ships;
-  TBD on exact module name — fall through to Anthropic if Cursor is
-  unavailable in dev).
+- Provider: Anthropic via flue's pi-ai layer (`anthropic/<model-id>`),
+  reading `ANTHROPIC_API_KEY` from env. Cursor's API surface is
+  agent-orchestration only — see AGENTS.md §LLM.
 - Skills loaded from `packages/skills/*.md` at boot; flue's native skill
   loader does this — no plugin layer.
 - Tools the agent has shell access to:
@@ -173,10 +173,10 @@ Single CDK app, four stacks:
 
 1. **NetworkStack** — VPC (2 AZs, public + private subnets, single NAT
    for cost), Cloud Map namespace `opssage.local`.
-2. **SecretsStack** — Secrets Manager entries for: Cursor key, Datadog
-   API key + app key, GitHub PAT, Slack bot token + signing secret,
-   Langfuse keys, OpsSage webhook shared secret. One JSON per logical
-   group.
+2. **SecretsStack** — Secrets Manager entries for: Anthropic key,
+   Datadog API key + app key, GitHub PAT, Slack bot token + signing
+   secret, Langfuse keys, OpsSage webhook shared secret. One JSON per
+   logical group.
 3. **EcsStack** —
    - ECR repos for `agent` and `sandbox` images.
    - ECS cluster (Fargate).
@@ -202,7 +202,7 @@ Single CDK app, four stacks:
 | `opssage/datadog`            | `{ api_key, app_key, site }`                                 |
 | `opssage/github`             | `{ pat }` (classic, read-only: repo, read:org)               |
 | `opssage/slack`              | `{ bot_token, signing_secret, app_id }`                      |
-| `opssage/cursor`             | `{ api_key }`                                                |
+| `opssage/anthropic`          | `{ api_key }`                                                |
 | `opssage/langfuse`           | `{ public_key, secret_key, host }`                           |
 
 ECS task definition pulls these via `secrets:` blocks; nothing in env
@@ -269,8 +269,8 @@ sandbox to clone (shallow, depth=1, primary branch only).
 Ordered so we always have something working end-to-end:
 
 1. **Skeleton (local).** pnpm workspace, agent package boots flue with
-   the Cursor (or Anthropic-fallback) provider, loads one trivial skill
-   that just summarizes a hard-coded Datadog payload from a fixture.
+   the Anthropic provider, loads one trivial skill that just summarizes
+   a hard-coded Datadog payload from a fixture.
    Langfuse tracing on. Run via `pnpm dev`.
 2. **Datadog tools + sandbox client.** Implement the Datadog API
    wrappers, gh CLI wrapper, sandbox RPC client. Skill is now real:
@@ -307,8 +307,10 @@ Each phase ends with a runnable demo; nothing waits on the next.
 
 ## Open questions still to resolve
 
-- **Cursor provider in flue.** We have a Cursor key but haven't yet
-  confirmed which flue provider module wires it up. Spike in phase 1.
+- ~~**Cursor provider in flue.**~~ Resolved: Cursor's public API
+  (Cloud Agents API + `@cursor/sdk`) is agent-orchestration, not raw
+  inference, so it doesn't fit flue's model-provider slot. Shipping
+  with Anthropic via pi-ai. See AGENTS.md §LLM.
 - **Datadog webhook IP ranges.** Confirm the exact JSON path / category
   to filter (`webhooks` vs `agents` vs `all`). Done as part of the
   custom resource implementation.
