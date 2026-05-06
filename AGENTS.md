@@ -34,9 +34,14 @@ The runtime should be a thin wrapper; the same agent core runs in all three.
 OpsSage is meant to be expanded over time. Two extension models worth
 borrowing from:
 
-- **Extensions** — module-style plugins, similar to a pnpm/PI mono workspace
-  layout, where each integration (Datadog, Langfuse, GitHub, PagerDuty, …)
-  lives in its own package with a shared interface.
+- **Extensions** — package-style modules built on
+  [badlogic/pi-mono](https://github.com/badlogic/pi-mono). Pi-mono already
+  provides the building blocks we need: `@mariozechner/pi-ai` for a
+  multi-provider LLM API (so swapping Cursor / Anthropic / OpenAI is one
+  config change), `@mariozechner/pi-agent-core` for the agent runtime
+  (tool-calling + state), plus terminal-UI and web-chat surfaces. Each
+  OpsSage integration (Datadog, Langfuse, GitHub, PagerDuty, …) lives in
+  its own package and registers tools through the pi-agent-core interface.
 - **Skills** — instruction-shaped capabilities loaded on demand, modeled on
   [getsentry/warden](https://github.com/getsentry/warden). A skill bundles
   a prompt, the tools it needs, and any reference docs for one specific
@@ -47,9 +52,9 @@ those capabilities into reusable playbooks.
 
 ## LLM
 
-Target is **Cursor via API key** as the model provider. The agent should
-treat the model as a swappable backend — anything Cursor-compatible (or
-Anthropic / OpenAI-compatible) should work behind the same interface.
+Target is **Cursor via API key** as the model provider. Routed through
+`@mariozechner/pi-ai`, so the model is a swappable backend — anything
+Cursor / Anthropic / OpenAI-compatible works behind the same interface.
 
 ## Open questions
 
