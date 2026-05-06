@@ -2,21 +2,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildWebhookRoutes } from './datadog.js';
 
 function fakeDeps() {
-  const session = {
-    provider: { providerName: 'anthropic', model: 'x', chat: vi.fn() },
-    tracer: { flush: vi.fn().mockResolvedValue(undefined) },
-    datadog: {},
-    github: {},
-    sandbox: { cleanup: vi.fn().mockResolvedValue(undefined) },
-    repos: [],
-    skills: [],
-    // biome-ignore lint/suspicious/noExplicitAny: test stub
-  } as any;
+  const tracer = { flush: vi.fn().mockResolvedValue(undefined) };
   return {
     webhookSecret: 'shh',
     alertChannel: '#alerts',
-    session,
-    tracer: session.tracer,
+    agent: { triage: vi.fn().mockResolvedValue({
+      hypothesis: 'test',
+      evidence: [],
+      suggested_next_step: 'noop',
+      linked_artifacts: [],
+      confidence: 'low',
+    }) },
+    // biome-ignore lint/suspicious/noExplicitAny: test stub for langfuse
+    tracer: tracer as any,
     chat: { locateAlertThread: vi.fn(), reply: vi.fn().mockResolvedValue(undefined) },
   };
 }

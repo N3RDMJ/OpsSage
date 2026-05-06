@@ -1,16 +1,15 @@
 import { timingSafeEqual } from 'node:crypto';
-import { Hono } from 'hono';
 import { datadogWebhookSchema, dedupeKey, tagsFromString } from '@opssage/config-schema';
+import type { langfuse as lf } from '@opssage/tools';
+import { Hono } from 'hono';
+import type { ChatAdapter } from '../chat/slack.js';
 import { TtlLru } from '../dedupe.js';
 import { logger } from '../log.js';
-import { runTriageSession } from '../session.js';
-import type { SessionDeps } from '../session.js';
-import type { ChatAdapter } from '../chat/slack.js';
-import type { langfuse as lf } from '@opssage/tools';
+import type { OpsSageAgent } from '../session.js';
 
 export interface WebhookDeps {
   webhookSecret: string;
-  session: SessionDeps;
+  agent: OpsSageAgent;
   chat: ChatAdapter;
   tracer: lf.LangfuseClient;
   alertChannel: string;
@@ -58,10 +57,7 @@ export function buildWebhookRoutes(deps: WebhookDeps): Hono {
     // retries on non-2xx, and the agent run can take 30–90s.
     void (async () => {
       try {
-        const summary = await runTriageSession(deps.session, payload, {
-          skillName: 'diagnose-5xx-spike',
-          sessionId,
-        });
+        const summary = await deps.agent.triage({ alert: payload, sessionId });
         logger.info('triage complete', { sessionId, hypothesis: summary.hypothesis });
 
         const target = payload.alert_url

@@ -1,14 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
-import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
-import type { SecretEntries } from './secrets-stack';
 import { DatadogIpRanges } from './datadog-ip-ranges';
+import type { SecretEntries } from './secrets-stack';
 
 export interface EcsStackProps extends cdk.StackProps {
   vpc: ec2.IVpc;
@@ -18,6 +18,12 @@ export interface EcsStackProps extends cdk.StackProps {
   alertChannel: string;
 }
 
+/**
+ * One Fargate service: the agent. flue manages its own sandbox connector
+ * (default: virtual just-bash inside the agent task), so v1 ships without a
+ * sibling sandbox service. We can switch to flue's Daytona connector later by
+ * setting the relevant env vars without changing this stack's shape.
+ */
 export class EcsStack extends cdk.Stack {
   readonly agentLogGroupName: string;
 
@@ -31,71 +37,21 @@ export class EcsStack extends cdk.Stack {
       imageScanOnPush: true,
       lifecycleRules: [{ maxImageCount: 20 }],
     });
-    const sandboxRepo = new ecr.Repository(this, 'SandboxRepo', {
-      repositoryName: 'opssage/sandbox',
-      imageScanOnPush: true,
-      lifecycleRules: [{ maxImageCount: 20 }],
-    });
 
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
       enableFargateCapacityProviders: true,
-      defaultCloudMapNamespace: { name: cloudMapNamespace.namespaceName, useForServiceConnect: true },
+      defaultCloudMapNamespace: {
+        name: cloudMapNamespace.namespaceName,
+        useForServiceConnect: true,
+      },
     });
 
     const agentLogs = new logs.LogGroup(this, 'AgentLogs', {
       retention: logs.RetentionDays.ONE_MONTH,
     });
     this.agentLogGroupName = agentLogs.logGroupName;
-    const sandboxLogs = new logs.LogGroup(this, 'SandboxLogs', {
-      retention: logs.RetentionDays.TWO_WEEKS,
-    });
 
-    // ---- Sandbox service ----
-    const sandboxTaskDef = new ecs.FargateTaskDefinition(this, 'SandboxTask', {
-      cpu: 512,
-      memoryLimitMiB: 1024,
-    });
-    sandboxTaskDef.addContainer('sandbox', {
-      image: ecs.ContainerImage.fromEcrRepository(sandboxRepo, 'latest'),
-      logging: ecs.LogDriver.awsLogs({ streamPrefix: 'sandbox', logGroup: sandboxLogs }),
-      portMappings: [{ containerPort: 8081, name: 'rpc' }],
-      secrets: {
-        GITHUB_TOKEN: ecs.Secret.fromSecretsManager(secrets.github, 'pat'),
-      },
-      environment: {
-        NODE_ENV: 'production',
-        SANDBOX_WORK_DIR: '/work',
-      },
-      healthCheck: {
-        command: ['CMD-SHELL', 'wget -qO- http://localhost:8081/healthz || exit 1'],
-        interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(5),
-        retries: 3,
-        startPeriod: cdk.Duration.seconds(20),
-      },
-    });
-
-    const sandboxSg = new ec2.SecurityGroup(this, 'SandboxSg', {
-      vpc,
-      description: 'OpsSage sandbox',
-      allowAllOutbound: true, // Tighten later via egress allowlists.
-    });
-    const sandboxService = new ecs.FargateService(this, 'SandboxService', {
-      cluster,
-      taskDefinition: sandboxTaskDef,
-      desiredCount: 1,
-      assignPublicIp: false,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [sandboxSg],
-      cloudMapOptions: {
-        name: 'sandbox',
-        cloudMapNamespace,
-        dnsRecordType: servicediscovery.DnsRecordType.A,
-      },
-    });
-
-    // ---- Agent service ----
     const agentTaskDef = new ecs.FargateTaskDefinition(this, 'AgentTask', {
       cpu: 1024,
       memoryLimitMiB: 2048,
@@ -105,7 +61,10 @@ export class EcsStack extends cdk.Stack {
       logging: ecs.LogDriver.awsLogs({ streamPrefix: 'agent', logGroup: agentLogs }),
       portMappings: [{ containerPort: 8080, name: 'http' }],
       secrets: {
-        OPSSAGE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(secrets.webhook, 'datadog_shared_secret'),
+        OPSSAGE_WEBHOOK_SECRET: ecs.Secret.fromSecretsManager(
+          secrets.webhook,
+          'datadog_shared_secret',
+        ),
         DATADOG_API_KEY: ecs.Secret.fromSecretsManager(secrets.datadog, 'api_key'),
         DATADOG_APP_KEY: ecs.Secret.fromSecretsManager(secrets.datadog, 'app_key'),
         DATADOG_SITE: ecs.Secret.fromSecretsManager(secrets.datadog, 'site'),
@@ -121,10 +80,9 @@ export class EcsStack extends cdk.Stack {
         NODE_ENV: 'production',
         PORT: '8080',
         PROVIDER: 'cursor',
-        SANDBOX_MODE: 'rpc',
-        SANDBOX_URL: `http://sandbox.${cloudMapNamespace.namespaceName}:8081`,
+        FLUE_MODEL: 'anthropic/claude-sonnet-4-6',
         OPSSAGE_ALERT_CHANNEL: props.alertChannel,
-        OPSSAGE_REPOS_FILE: 'config/repos.yaml',
+        OPSSAGE_REPOS_FILE: '/app/config/repos.yaml',
       },
       healthCheck: {
         command: ['CMD-SHELL', 'wget -qO- http://localhost:8080/healthz || exit 1'],
@@ -140,7 +98,6 @@ export class EcsStack extends cdk.Stack {
       description: 'OpsSage agent',
       allowAllOutbound: true,
     });
-    sandboxSg.addIngressRule(agentSg, ec2.Port.tcp(8081), 'agent → sandbox RPC');
 
     const agentService = new ecs.FargateService(this, 'AgentService', {
       cluster,
@@ -151,7 +108,6 @@ export class EcsStack extends cdk.Stack {
       securityGroups: [agentSg],
     });
 
-    // ---- ALB in front of the agent ----
     const albSg = new ec2.SecurityGroup(this, 'AlbSg', {
       vpc,
       description: 'OpsSage ALB ingress (Datadog-only)',
@@ -178,7 +134,6 @@ export class EcsStack extends cdk.Stack {
         healthCheck: { path: '/healthz', healthyHttpCodes: '200' },
       });
     } else {
-      // Dev shortcut so `cdk synth` works without an ACM cert.
       const httpListener = alb.addListener('Http', { port: 80 });
       httpListener.addTargets('Agent', {
         port: 8080,
@@ -194,9 +149,5 @@ export class EcsStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'AlbDnsName', { value: alb.loadBalancerDnsName });
     new cdk.CfnOutput(this, 'AgentRepoUri', { value: agentRepo.repositoryUri });
-    new cdk.CfnOutput(this, 'SandboxRepoUri', { value: sandboxRepo.repositoryUri });
-
-    // Force creation order so the sandbox is reachable when the agent starts.
-    agentService.node.addDependency(sandboxService);
   }
 }

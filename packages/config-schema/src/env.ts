@@ -9,12 +9,15 @@ export const envSchema = z.object({
 
   OPSSAGE_WEBHOOK_SECRET: nonEmpty,
 
+  // flue uses `provider/model` as a single namespace string. We keep PROVIDER
+  // separate because routing Anthropic-shaped traffic to Cursor's compatible
+  // endpoint is a base-URL swap, not a different namespace.
   PROVIDER: z.enum(['anthropic', 'cursor']).default('anthropic'),
+  FLUE_MODEL: z.string().default('anthropic/claude-sonnet-4-6'),
+  FLUE_SANDBOX: z.enum(['local']).optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
-  ANTHROPIC_MODEL: z.string().default('claude-sonnet-4-6'),
   CURSOR_API_KEY: z.string().optional(),
   CURSOR_BASE_URL: z.string().url().default('https://api.cursor.sh/v1'),
-  CURSOR_MODEL: z.string().default('claude-sonnet-4-6'),
 
   DATADOG_API_KEY: nonEmpty,
   DATADOG_APP_KEY: nonEmpty,
@@ -29,10 +32,8 @@ export const envSchema = z.object({
   LANGFUSE_SECRET_KEY: z.string().optional(),
   LANGFUSE_HOST: z.string().url().default('https://cloud.langfuse.com'),
 
-  SANDBOX_URL: z.string().url().default('http://sandbox.opssage.local:8081'),
-  SANDBOX_MODE: z.enum(['rpc', 'in-process']).default('rpc'),
-
   OPSSAGE_REPOS_FILE: z.string().default('apps/agent/config/repos.yaml'),
+  OPSSAGE_ALERT_CHANNEL: z.string().default('#alerts'),
 });
 
 export type Env = z.infer<typeof envSchema>;

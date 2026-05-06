@@ -4,24 +4,5 @@ services:
       context: .
       dockerfile: apps/agent/Dockerfile
     env_file: .env.local
-    environment:
-      SANDBOX_MODE: rpc
-      SANDBOX_URL: http://sandbox:8081
     ports:
       - "8080:8080"
-    depends_on:
-      sandbox:
-        condition: service_healthy
-
-  sandbox:
-    build:
-      context: .
-      dockerfile: apps/sandbox/Dockerfile
-    env_file: .env.local
-    environment:
-      PORT: "8081"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/healthz || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 5

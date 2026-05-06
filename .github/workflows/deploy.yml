@@ -43,13 +43,6 @@ jobs:
           docker push "$IMAGE"
           docker push "${{ steps.ecr.outputs.registry }}/opssage/agent:latest"
 
-      - name: Build & push sandbox image
-        run: |
-          IMAGE="${{ steps.ecr.outputs.registry }}/opssage/sandbox:${GITHUB_SHA}"
-          docker build -f apps/sandbox/Dockerfile -t "$IMAGE" -t "${{ steps.ecr.outputs.registry }}/opssage/sandbox:latest" .
-          docker push "$IMAGE"
-          docker push "${{ steps.ecr.outputs.registry }}/opssage/sandbox:latest"
-
       - name: cdk deploy
         working-directory: infra
         env:
