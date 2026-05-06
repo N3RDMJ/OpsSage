@@ -29,26 +29,29 @@ before a human gets paged.
 
 The runtime should be a thin wrapper; the same agent core runs in all three.
 
-## Extensibility
+## Extensibility — skills
 
-OpsSage is meant to be expanded over time. Two extension models worth
-borrowing from:
+OpsSage extends through **skills**, modeled on
+[getsentry/warden](https://github.com/getsentry/warden). A skill is an
+instruction-shaped capability loaded on demand: a prompt + the tools it
+needs + any reference docs, all bundled for one specific workflow
+(e.g. "diagnose a 5xx spike", "explain a Langfuse regression",
+"correlate an alert with recent deploys").
 
-- **Extensions** — package-style modules built on
-  [badlogic/pi-mono](https://github.com/badlogic/pi-mono). Pi-mono already
-  provides the building blocks we need: `@mariozechner/pi-ai` for a
-  multi-provider LLM API (so swapping Cursor / Anthropic / OpenAI is one
-  config change), `@mariozechner/pi-agent-core` for the agent runtime
-  (tool-calling + state), plus terminal-UI and web-chat surfaces. Each
-  OpsSage integration (Datadog, Langfuse, GitHub, PagerDuty, …) lives in
-  its own package and registers tools through the pi-agent-core interface.
-- **Skills** — instruction-shaped capabilities loaded on demand, modeled on
-  [getsentry/warden](https://github.com/getsentry/warden). A skill bundles
-  a prompt, the tools it needs, and any reference docs for one specific
-  workflow (e.g. "diagnose a 5xx spike", "explain a Langfuse regression").
+Skills are the single extension surface. We deliberately *don't* add a
+second plugin tier on top:
 
-Both should be first-class: extensions add raw capability, skills compose
-those capabilities into reusable playbooks.
+- **Integrations are tools, not extensions.** Datadog, Langfuse, GitHub,
+  PagerDuty, etc. are implemented as tools registered against
+  `@mariozechner/pi-agent-core` from
+  [badlogic/pi-mono](https://github.com/badlogic/pi-mono). Skills pull
+  in whichever tools they need.
+- **Why skills over package-style extensions.** The unit of value for an
+  on-call agent is the *workflow*, not the integration. A "5xx spike"
+  skill needs Datadog + GitHub + deploy history together; splitting that
+  across plugins fragments the prompt and the reference docs that make
+  the workflow good. Skills also stay close to how a human runbook is
+  written, which is the right shape for this tool.
 
 ## LLM
 
