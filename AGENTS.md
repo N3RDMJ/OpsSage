@@ -23,23 +23,32 @@ infrastructure, so we build *on* it rather than reinvent any of it:
   API key is a config switch, not an architectural concern.
 - **Session persistence + roles** come for free (Durable Objects on the
   CF runtime, in-process otherwise).
-- **Tools via MCP.** Datadog, Langfuse, GitHub all plug in as MCP
-  connectors or direct command definitions.
+- **Shell-first tools.** Flue gives the agent a sandbox with shell
+  access, so integrations are CLIs and HTTP APIs the agent invokes
+  directly — same way a human operator would.
 
 ## What it does
 
-- **Datadog** — reads metrics, logs, monitors, and APM traces. Triggered by
-  Datadog webhooks (monitor alerts) as the primary entry point.
-- **Langfuse** — pulls traces, sessions, and scores via the Langfuse API to
-  reason about LLM-side failures (bad generations, regressions, cost spikes).
-- **GitHub** — inspects the repository(ies) tied to the alert. Understands
-  the codebase well enough to know *which* files to check. Two modes:
-  - Lightweight: GitHub API + grep / code search.
-  - Heavyweight: clone into a flue sandbox (Daytona or local mount) for
-    deeper static analysis.
+All integrations go through CLIs and HTTP APIs — no MCP servers in the
+middle. The flue sandbox already gives the agent shell access, so the
+fewer layers between the agent and the source of truth, the better.
 
-Each integration is exposed as a tool to the agent — most likely as MCP
-servers — so skills can compose them freely.
+- **Datadog** — `datadog-ci` for the operations it covers (CI visibility,
+  synthetics, deployments) plus `curl` against the Datadog API for
+  metrics, logs, monitors, and APM traces. Triggered by Datadog webhooks
+  (monitor alerts) as the primary entry point.
+- **Langfuse** — direct calls to the Langfuse API for traces, sessions,
+  scores, and generations. The official Langfuse MCP doesn't cover
+  observability primitives, which is the other reason CLI/API beats MCP
+  here.
+- **GitHub** — `gh` CLI for everyday operations (repo / PR / issue /
+  search), GitHub API for anything `gh` doesn't expose cleanly. Two
+  modes:
+  - Lightweight: `gh search code` + grep against shallow clones.
+  - Heavyweight: full clone into a flue sandbox (Daytona or local mount)
+    for deeper static analysis.
+
+Skills compose these by shelling out — no plugin layer.
 
 ## Where it runs
 
@@ -87,5 +96,7 @@ without code changes.
   our own ECS-native sandbox.
 - How skills are distributed — vendored in-repo vs. pulled from a registry.
 - Auth model for the Datadog webhook endpoint (signed payloads + allowlist).
-- Whether Langfuse and Datadog get official MCP servers we can reuse, or
-  we write thin ones.
+- Credential delivery to the sandbox — env vars vs. mounted secrets vs.
+  a small auth proxy in front of the upstream APIs.
+- Rate limits / quota handling for Datadog and GitHub when a skill fans
+  out across many calls.
