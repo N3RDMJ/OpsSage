@@ -37,7 +37,7 @@ export class LangfuseClient {
     this.base = cfg.host ?? 'https://cloud.langfuse.com';
     this.enabled = Boolean(cfg.publicKey && cfg.secretKey);
     this.auth = this.enabled
-      ? 'Basic ' + Buffer.from(`${cfg.publicKey}:${cfg.secretKey}`).toString('base64')
+      ? `Basic ${Buffer.from(`${cfg.publicKey}:${cfg.secretKey}`).toString('base64')}`
       : '';
   }
 
@@ -78,11 +78,15 @@ export class LangfuseClient {
       startTime: new Date().toISOString(),
       ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
     };
-    this.push('span-create', span);
+    this.push('span-create', { ...span });
     return span;
   }
 
-  endSpan(span: ActiveSpan, output?: unknown, level: 'DEFAULT' | 'WARN' | 'ERROR' = 'DEFAULT'): void {
+  endSpan(
+    span: ActiveSpan,
+    output?: unknown,
+    level: 'DEFAULT' | 'WARN' | 'ERROR' = 'DEFAULT',
+  ): void {
     this.push('span-update', {
       id: span.id,
       traceId: span.traceId,

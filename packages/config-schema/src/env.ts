@@ -9,15 +9,12 @@ export const envSchema = z.object({
 
   OPSSAGE_WEBHOOK_SECRET: nonEmpty,
 
-  // flue uses `provider/model` as a single namespace string. We keep PROVIDER
-  // separate because routing Anthropic-shaped traffic to Cursor's compatible
-  // endpoint is a base-URL swap, not a different namespace.
-  PROVIDER: z.enum(['anthropic', 'cursor']).default('anthropic'),
+  // flue uses a single `provider/model` namespace string and resolves
+  // credentials via env (see pi-ai's env-api-keys: ANTHROPIC_API_KEY).
+  // Cursor support requires a custom pi-ai Model with a baseUrl override —
+  // queued as a follow-up; not in v1.
   FLUE_MODEL: z.string().default('anthropic/claude-sonnet-4-6'),
-  FLUE_SANDBOX: z.enum(['local']).optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
-  CURSOR_API_KEY: z.string().optional(),
-  CURSOR_BASE_URL: z.string().url().default('https://api.cursor.sh/v1'),
 
   DATADOG_API_KEY: nonEmpty,
   DATADOG_APP_KEY: nonEmpty,
@@ -32,7 +29,10 @@ export const envSchema = z.object({
   LANGFUSE_SECRET_KEY: z.string().optional(),
   LANGFUSE_HOST: z.string().url().default('https://cloud.langfuse.com'),
 
-  OPSSAGE_REPOS_FILE: z.string().default('apps/agent/config/repos.yaml'),
+  // Resolved against process.cwd(). The agent's working directory in dev
+  // (`flue dev` from apps/agent) and prod (Docker WORKDIR=/app) both put
+  // the file at `config/repos.yaml`.
+  OPSSAGE_REPOS_FILE: z.string().default('config/repos.yaml'),
   OPSSAGE_ALERT_CHANNEL: z.string().default('#alerts'),
 });
 

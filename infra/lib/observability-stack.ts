@@ -1,7 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
-import * as logs from 'aws-cdk-lib/aws-logs';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import { Construct } from 'constructs';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import type { Construct } from 'constructs';
 
 export interface ObservabilityStackProps extends cdk.StackProps {
   agentLogGroupName: string;

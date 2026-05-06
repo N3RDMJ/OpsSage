@@ -1,6 +1,7 @@
-import type { Env, TriageSummary } from '@opssage/config-schema';
+import type { Env } from '@opssage/config-schema';
 import { slack as slackTools } from '@opssage/tools';
 import { logger } from './log.js';
+import type { TriageSummary } from './triage-schema.js';
 
 export interface ChatTarget {
   channel: string;
@@ -51,7 +52,10 @@ class ConsoleChatAdapter implements ChatAdapter {
   async locateAlertThread() {
     return undefined;
   }
-  async reply({ summary, alertUrl }: { target: ChatTarget; summary: TriageSummary; alertUrl?: string }) {
+  async reply({
+    summary,
+    alertUrl,
+  }: { target: ChatTarget; summary: TriageSummary; alertUrl?: string }) {
     logger.info('[chat:console] triage reply', { summary, alertUrl });
   }
 }

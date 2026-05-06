@@ -15,7 +15,7 @@
     "lint:fix": "biome check --write .",
     "fmt": "biome format --write .",
     "fmt:check": "biome format .",
-    "ci": "biome ci .",
+    "check": "biome ci .",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "pnpm --filter @opssage/agent dev",
@@ -35,8 +35,6 @@
     "pre-push": "pnpm typecheck && pnpm test"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,json,jsonc}": [
-      "biome check --write --no-errors-on-unmatched"
-    ]
+    "*.{ts,tsx,js,json,jsonc}": ["biome check --write --no-errors-on-unmatched"]
   }
 }

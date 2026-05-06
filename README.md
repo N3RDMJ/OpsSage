@@ -40,15 +40,14 @@ const gh = defineCommand('gh', { env: { GH_TOKEN: process.env.GITHUB_TOKEN } });
 
 export default async function ({ init, payload }: FlueContext) {
   // 1. verify Datadog secret + parse payload + dedupe
-  const agent = await init({
-    model: 'anthropic/claude-sonnet-4-6',
-    providers: { anthropic: { baseUrl, apiKey } }, // anthropic OR cursor's compat endpoint
+  const session = await init({
+    sandbox: 'local',                       // mounts cwd at /workspace
+    model: 'anthropic/claude-sonnet-4-6',   // pi-ai resolves keys from env
   });
-  const session = await agent.session();
   const summary = await session.skill('diagnose-5xx-spike', {
     args: { alert, repos },
     commands: [gh, datadogCi, curl, rg, git, jq],
-    result: triageResult, // valibot schema → typed structured output
+    result: triageSchema,                   // valibot → typed structured output
   });
   // 2. post Slack reply, flush Langfuse
   return { status: 'ok', summary };
@@ -64,11 +63,24 @@ export default async function ({ init, payload }: FlueContext) {
 - Result schema is Valibot (flue's native); zod stays for the webhook
   payload + repo allowlist (validation outside the model loop).
 
-## Cursor-vs-Anthropic
+## Auth
 
-Same flue model namespace (`anthropic/...`); set `PROVIDER=cursor` and a
-`CURSOR_API_KEY` to point flue's anthropic provider at Cursor's
-Anthropic-compatible endpoint. No code change.
+`FlueContext` exposes only `{ sessionId, payload, env, init }` — no
+request headers. The webhook secret CAN'T be validated inside the agent
+function. v1 leans on the ALB security group, which restricts ingress to
+Datadog's published webhook IP ranges (refreshed daily by the
+`DatadogIpRanges` custom resource in `infra/`). Add a Lambda authorizer
+or path-embedded token if/when belt-and-suspenders is needed.
+
+## Cursor
+
+The plan calls for Cursor as the production model provider. `pi-ai`
+(flue's underlying provider library) resolves keys from env vars, but
+Cursor's Anthropic-compatible endpoint requires a custom `Model` with a
+`baseUrl` override — `init({ model: 'anthropic/...' })` only resolves to
+public Anthropic. Wiring that up means constructing the `Model` at build
+time or via a custom `resolveModel`. Queued as a follow-up; v1 ships
+against public Anthropic.
 
 ## Local dev
 
@@ -81,10 +93,10 @@ pnpm dev                                 # = flue dev on :8080
 
 ## Quality gates
 
-- `pnpm lint` — Biome
+- `pnpm lint` — Biome (`biome check`)
 - `pnpm typecheck` — TypeScript
 - `pnpm test` — Vitest
-- `pnpm ci` — `biome ci .` (what GitHub Actions runs)
+- `pnpm check` — `biome ci .` (what GitHub Actions runs)
 
 `simple-git-hooks` runs `lint-staged` (Biome) on staged files; pre-push runs
 typecheck + tests.

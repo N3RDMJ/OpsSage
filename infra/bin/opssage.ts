@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { NetworkStack } from '../lib/network-stack';
-import { SecretsStack } from '../lib/secrets-stack';
 import { EcsStack } from '../lib/ecs-stack';
+import { NetworkStack } from '../lib/network-stack';
 import { ObservabilityStack } from '../lib/observability-stack';
+import { SecretsStack } from '../lib/secrets-stack';
 
 const app = new cdk.App();
 const env = {

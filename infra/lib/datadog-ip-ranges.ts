@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import type * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -102,7 +102,10 @@ export class DatadogIpRanges extends Construct {
           FunctionName: fn.functionName,
           Payload: JSON.stringify({
             RequestType: 'Create',
-            ResourceProperties: { SecurityGroupId: props.securityGroup.securityGroupId, Port: port },
+            ResourceProperties: {
+              SecurityGroupId: props.securityGroup.securityGroupId,
+              Port: port,
+            },
           }),
         },
         physicalResourceId: cr.PhysicalResourceId.of('dd-ip-sync-initial'),
@@ -114,13 +117,19 @@ export class DatadogIpRanges extends Construct {
           FunctionName: fn.functionName,
           Payload: JSON.stringify({
             RequestType: 'Update',
-            ResourceProperties: { SecurityGroupId: props.securityGroup.securityGroupId, Port: port },
+            ResourceProperties: {
+              SecurityGroupId: props.securityGroup.securityGroupId,
+              Port: port,
+            },
           }),
         },
         physicalResourceId: cr.PhysicalResourceId.of('dd-ip-sync-initial'),
       },
       policy: cr.AwsCustomResourcePolicy.fromStatements([
-        new iam.PolicyStatement({ actions: ['lambda:InvokeFunction'], resources: [fn.functionArn] }),
+        new iam.PolicyStatement({
+          actions: ['lambda:InvokeFunction'],
+          resources: [fn.functionArn],
+        }),
       ]),
     });
 

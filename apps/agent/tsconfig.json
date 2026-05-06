@@ -6,10 +6,7 @@
     "composite": false,
     "incremental": false
   },
-  "references": [
-    { "path": "../../packages/config-schema" },
-    { "path": "../../packages/tools" }
-  ],
+  "references": [{ "path": "../../packages/config-schema" }, { "path": "../../packages/tools" }],
   "include": [".flue/**/*.ts"],
   "exclude": ["dist"]
 }

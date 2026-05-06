@@ -1,4 +1,4 @@
-import { fetchJson, HttpError } from './http.js';
+import { HttpError, fetchJson } from './http.js';
 
 export interface SlackConfig {
   botToken: string;
@@ -17,7 +17,7 @@ export interface SlackMessage {
  * direct now means dev with no adapter packages installed.
  */
 export class SlackClient {
-  private readonly headers: HeadersInit;
+  private readonly headers: Record<string, string>;
 
   constructor(cfg: SlackConfig) {
     this.headers = {

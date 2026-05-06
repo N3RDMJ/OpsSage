@@ -9,7 +9,7 @@ export interface DatadogConfig {
 
 export class DatadogClient {
   private readonly base: string;
-  private readonly headers: HeadersInit;
+  private readonly headers: Record<string, string>;
 
   constructor(private readonly cfg: DatadogConfig) {
     this.base = `https://api.${cfg.site ?? 'datadoghq.com'}`;
@@ -53,7 +53,11 @@ export class DatadogClient {
   }
 
   /** Pull recent deployments via the Events API. */
-  recentDeployments(service: string, fromSec: number, toSec: number): Promise<DatadogEventsResponse> {
+  recentDeployments(
+    service: string,
+    fromSec: number,
+    toSec: number,
+  ): Promise<DatadogEventsResponse> {
     const u = new URL('/api/v1/events', this.base);
     u.searchParams.set('start', String(fromSec));
     u.searchParams.set('end', String(toSec));

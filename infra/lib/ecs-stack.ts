@@ -5,8 +5,8 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
-import { Construct } from 'constructs';
+import type * as servicediscovery from 'aws-cdk-lib/aws-servicediscovery';
+import type { Construct } from 'constructs';
 import { DatadogIpRanges } from './datadog-ip-ranges';
 import type { SecretEntries } from './secrets-stack';
 
@@ -71,7 +71,7 @@ export class EcsStack extends cdk.Stack {
         GITHUB_TOKEN: ecs.Secret.fromSecretsManager(secrets.github, 'pat'),
         SLACK_BOT_TOKEN: ecs.Secret.fromSecretsManager(secrets.slack, 'bot_token'),
         SLACK_SIGNING_SECRET: ecs.Secret.fromSecretsManager(secrets.slack, 'signing_secret'),
-        CURSOR_API_KEY: ecs.Secret.fromSecretsManager(secrets.cursor, 'api_key'),
+        ANTHROPIC_API_KEY: ecs.Secret.fromSecretsManager(secrets.anthropic, 'api_key'),
         LANGFUSE_PUBLIC_KEY: ecs.Secret.fromSecretsManager(secrets.langfuse, 'public_key'),
         LANGFUSE_SECRET_KEY: ecs.Secret.fromSecretsManager(secrets.langfuse, 'secret_key'),
         LANGFUSE_HOST: ecs.Secret.fromSecretsManager(secrets.langfuse, 'host'),
@@ -79,10 +79,8 @@ export class EcsStack extends cdk.Stack {
       environment: {
         NODE_ENV: 'production',
         PORT: '8080',
-        PROVIDER: 'cursor',
         FLUE_MODEL: 'anthropic/claude-sonnet-4-6',
         OPSSAGE_ALERT_CHANNEL: props.alertChannel,
-        OPSSAGE_REPOS_FILE: '/app/config/repos.yaml',
       },
       healthCheck: {
         command: ['CMD-SHELL', 'wget -qO- http://localhost:8080/health || exit 1'],

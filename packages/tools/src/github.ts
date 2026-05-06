@@ -7,7 +7,7 @@ export interface GithubConfig {
 
 export class GithubClient {
   private readonly base: string;
-  private readonly headers: HeadersInit;
+  private readonly headers: Record<string, string>;
 
   constructor(private readonly cfg: GithubConfig) {
     this.base = cfg.baseUrl ?? 'https://api.github.com';

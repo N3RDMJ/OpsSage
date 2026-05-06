@@ -24,7 +24,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
       - name: Biome (lint + format check)
-        run: pnpm ci
+        run: pnpm check
       - name: Typecheck
         run: pnpm typecheck
       - name: Test

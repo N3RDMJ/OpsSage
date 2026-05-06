@@ -1,13 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { Construct } from 'constructs';
+import type { Construct } from 'constructs';
 
 export interface SecretEntries {
   webhook: secretsmanager.ISecret;
   datadog: secretsmanager.ISecret;
   github: secretsmanager.ISecret;
   slack: secretsmanager.ISecret;
-  cursor: secretsmanager.ISecret;
+  anthropic: secretsmanager.ISecret;
   langfuse: secretsmanager.ISecret;
 }
 
@@ -34,7 +34,7 @@ export class SecretsStack extends cdk.Stack {
       datadog: placeholder('datadog', { api_key: '', app_key: '', site: 'datadoghq.com' }),
       github: placeholder('github', { pat: '' }),
       slack: placeholder('slack', { bot_token: '', signing_secret: '', app_id: '' }),
-      cursor: placeholder('cursor', { api_key: '' }),
+      anthropic: placeholder('anthropic', { api_key: '' }),
       langfuse: placeholder('langfuse', {
         public_key: '',
         secret_key: '',

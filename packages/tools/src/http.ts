@@ -51,7 +51,7 @@ export async function fetchJson<T = unknown>(url: string, opts: FetchJsonOptions
 }
 
 function backoff(attempt: number): number {
-  const base = 250 * Math.pow(2, attempt);
+  const base = 250 * 2 ** attempt;
   return base + Math.floor(Math.random() * base);
 }
 
