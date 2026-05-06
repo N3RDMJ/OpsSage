@@ -20,22 +20,18 @@ COPY apps/agent apps/agent
 RUN pnpm --filter @opssage/config-schema build \
  && pnpm --filter @opssage/tools build \
  && pnpm --filter @opssage/agent build
+# `flue build --target node` produces apps/agent/dist with the runtime
+# server entrypoint baked in; deploy ships only that subtree + node_modules.
 RUN pnpm --filter @opssage/agent... --prod deploy /out
 
 # --- runtime ---
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 
-# CLIs the agent's flue commands shell out to.
+# CLIs the flue commands shell out to (gh, datadog-ci, curl, git, rg, jq).
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      git \
-      curl \
-      jq \
-      ripgrep \
-      ca-certificates \
-      gnupg \
- # gh CLI
+      git curl jq ripgrep ca-certificates gnupg \
  && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
       | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
@@ -43,12 +39,10 @@ RUN apt-get update \
  && apt-get update \
  && apt-get install -y --no-install-recommends gh \
  && rm -rf /var/lib/apt/lists/*
-
-# datadog-ci is distributed as a single Node binary via npm.
 RUN npm install -g @datadog/datadog-ci@^2
 
 COPY --from=build /out /app
-# Skill markdown lives at /app/.agents/skills/ — flue auto-discovers it.
+# Skill markdown + repo allowlist + fixtures travel with the agent.
 COPY apps/agent/.agents /app/.agents
 COPY apps/agent/config /app/config
 COPY apps/agent/fixtures /app/fixtures
@@ -57,4 +51,5 @@ ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 USER node
-CMD ["node", "dist/index.js"]
+# `flue build --target node` writes the server entrypoint to dist/server.js.
+CMD ["node", "dist/server.js"]
