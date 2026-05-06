@@ -1,0 +1,26 @@
+{
+  "name": "@opssage/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "flue build --target node",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "flue dev",
+    "start": "node dist/server.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@flue/sdk": "^0.1.0",
+    "@opssage/config-schema": "workspace:*",
+    "@opssage/tools": "workspace:*",
+    "just-bash": "^2.14.2",
+    "valibot": "^1.0.0"
+  },
+  "devDependencies": {
+    "@flue/cli": "^0.1.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}

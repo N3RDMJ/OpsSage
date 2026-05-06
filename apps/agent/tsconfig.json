@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "composite": false,
+    "incremental": false
+  },
+  "references": [{ "path": "../../packages/config-schema" }, { "path": "../../packages/tools" }],
+  "include": [".flue/**/*.ts"],
+  "exclude": ["dist"]
+}

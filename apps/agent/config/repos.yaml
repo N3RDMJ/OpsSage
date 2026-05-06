@@ -1,0 +1,13 @@
+# Repo allowlist. The agent maps Datadog `service:<name>` tags to entries
+# below; only repos listed here can be cloned by the sandbox or queried by gh.
+- service: api
+  repo: example-org/api-server
+  primary_branch: main
+  hot_paths:
+    - "src/handlers/**"
+    - "src/middleware/**"
+- service: workers
+  repo: example-org/workers
+  primary_branch: main
+  hot_paths:
+    - "src/jobs/**"

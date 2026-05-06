@@ -1,0 +1,16 @@
+{
+  "event_type": "alert",
+  "alert_id": "1234567",
+  "alert_transition": "Triggered",
+  "aggregation_key": "abcd1234",
+  "alert_query": "avg(last_5m):sum:trace.servlet.request.errors{service:api,http.status_code:>=500}.as_rate() > 0.05",
+  "alert_metric": "trace.servlet.request.errors",
+  "alert_scope": "service:api",
+  "alert_status": "Alert",
+  "alert_title": "[Triggered] HTTP 5xx spike on api",
+  "alert_url": "https://app.datadoghq.com/monitors/1234567",
+  "date": 1733100000,
+  "tags": "service:api,env:prod,team:platform",
+  "title": "HTTP 5xx spike on api",
+  "type": "metric alert"
+}
